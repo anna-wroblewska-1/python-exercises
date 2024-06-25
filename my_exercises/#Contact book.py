@@ -19,7 +19,7 @@ print("Your Contact Book:\n")
 for row in contacts:
     print(row)
 
-def adding_name(add_name, add_number):
+def adding_name():
     add_name = input(print("Write name to add: "))
     add_number = input(print("Write number to add: "))
     cursor.execute(f'''
@@ -29,7 +29,7 @@ def adding_name(add_name, add_number):
     
 def updating():
     id_to_update = input(print("Select contact id to update: "))
-    name_or_phone = input(print("What you want to change?\n 1.Name \n 2.Phone: \n 3.Both "))
+    name_or_phone = input(print("What you want to change?\n 1.Name \n 2.Phone \n 3.Both "))
     if name_or_phone == "1":
         update_name = input(print("Write new name: "))
         cursor.execute(f'''
@@ -62,26 +62,29 @@ def deleting():
     ''')
 
     cursor.execute('''
-        WITH updated AS (
-        SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS new_id
-        FROM contact_book
-    )
-    UPDATE contact_book
-    SET id = updated.new_id
-    FROM updated
-    WHERE contact_book.id = updated.id;
-    ''')
-
+            WITH updated AS (
+            SELECT id, ROW_NUMBER() OVER (ORDER BY id) AS new_id
+            FROM contact_book
+        )
+        UPDATE contact_book
+        SET id = updated.new_id
+        FROM updated
+        WHERE contact_book.id = updated.id;
+        ''')
     cursor.execute('''
-    SELECT setval('contact_book_id_seq', (SELECT MAX(id) FROM contact_book));
-    ''')
+        SELECT setval('contact_book_id_seq', (SELECT MAX(id) FROM contact_book));
+        ''')
+    
+def searching():
+    search = input(print("What name are you searching for?"))
+    print("Your search:\n")
+    cursor.execute(f'''
+                   SELECT id, name, phone FROM contact_book
+                   WHERE name = '{search}'
+                   ''')
+    print(cursor.fetchone())
 
-    print("Your contact boook now:\n")
-    contacts = cursor.fetchall()
-    for row in contacts:
-        print(row)
-
-choice = input(print("What do you want to do, choose:\n 1. Add contact \n 2. Update \n 3. Delete \n 4. Search \n"))
+choice = input(print("\nWhat do you want to do, choose:\n 1. Add contact \n 2. Update \n 3. Delete \n 4. Search \n"))
 
 if choice == "1":
     adding_name()
@@ -93,13 +96,14 @@ if choice == "3":
     deleting()
 
 if choice == "4":
-    search = input(print("What name are you searching for?"))
-    print("Your search:\n")
-    cursor.execute(f'''
-                   SELECT id, name, phone FROM contact_book
-                   WHERE name = '{search}'
-                   ''')
+    searching()
 
+cursor.execute('SELECT * FROM contact_book ORDER BY id')
+
+contacts = cursor.fetchall()
+print("\nYour Contact Book now:\n")
+for row in contacts:
+    print(row)
 
 conn.commit()
 conn.close()
